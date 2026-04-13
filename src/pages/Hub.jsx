@@ -172,14 +172,15 @@ export default function Hub() {
               {/* Cuerpo */}
               <div style={{ padding: '12px 14px 14px' }}>
                 <div style={{ fontSize: '15px', fontWeight: '600', color: '#022847', marginBottom: '4px' }}>
-                  {unidad.nombre}
-                {!bloqueada && (
-                  <div style={{ marginTop: '10px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '500', color: '#0D6CB0' }}>
-                      {cargando ? 'Abriendo...' : 'Abrir →'}
-                    </span>
-                  </div>
-                )}
+              {unidad.nombre}
+</div>
+{!bloqueada && (
+  <div style={{ marginTop: '10px' }}>
+    <span style={{ fontSize: '12px', fontWeight: '500', color: '#0D6CB0' }}>
+      {cargando ? 'Abriendo...' : 'Abrir →'}
+    </span>
+  </div>
+)}
               </div>
             </div>
           )
