@@ -101,7 +101,7 @@ export default function Hub() {
 
       {perfil?.super_admin && (
         <div style={{ textAlign: 'center', padding: '2rem 0 3rem' }}>
-          <a href="/admin" style={{ fontSize: '11px', color: '#b0c4d4', textDecoration: 'none' }}>administracion</a>
+          <a href="/admin" style={{ fontSize: '11px', color: '#b0c4d4', textDecoration: 'none' }}>Administracion de usuarios</a>
         </div>
       )}
 
