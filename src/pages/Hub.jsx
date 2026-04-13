@@ -20,25 +20,25 @@ export default function Hub() {
   }, [])
 
   async function abrirUnidad(unidad) {
-    if (!unidad.activa || !unidad.url) return
-    setAbriendo(unidad.unidad_id)
-    try {
-      if (unidad.unidad_id === 'costadron') {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          window.open(`${COSTADRON_URL}?hub_token=${session.access_token}`, '_blank')
-        } else {
-          window.open(COSTADRON_URL, '_blank')
-        }
+  if (!unidad.activa || !unidad.url) return
+  setAbriendo(unidad.unidad_id)
+  try {
+    if (unidad.unidad_id === 'costadron') {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        window.location.href = `${COSTADRON_URL}?hub_token=${session.access_token}`
       } else {
-        window.open(unidad.url, '_blank')
+        window.location.href = COSTADRON_URL
       }
-    } catch (err) {
-      window.open(unidad.url, '_blank')
-    } finally {
-      setAbriendo(null)
+    } else {
+      window.location.href = unidad.url
     }
+  } catch (err) {
+    window.location.href = unidad.url
+  } finally {
+    setAbriendo(null)
   }
+}
 
   const iniciales = perfil?.nombre
     ? perfil.nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
