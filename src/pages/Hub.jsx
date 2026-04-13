@@ -19,26 +19,30 @@ export default function Hub() {
     return () => window.removeEventListener('resize', handle)
   }, [])
 
-  async function abrirUnidad(unidad) {
-    if (!unidad.activa || !unidad.url) return
-    setAbriendo(unidad.unidad_id)
-    try {
-      if (unidad.unidad_id === 'costadron') {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          window.location.href = `${COSTADRON_URL}?hub_token=${session.access_token}`
-        } else {
-          window.location.href = COSTADRON_URL
-        }
+async function abrirUnidad(unidad) {
+  if (!unidad.activa || !unidad.url) return
+  setAbriendo(unidad.unidad_id)
+  try {
+    if (unidad.unidad_id === 'costadron') {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        const params = new URLSearchParams({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        })
+        window.location.href = `${COSTADRON_URL}?${params.toString()}`
       } else {
-        window.location.href = unidad.url
+        window.location.href = COSTADRON_URL
       }
-    } catch (err) {
+    } else {
       window.location.href = unidad.url
-    } finally {
-      setAbriendo(null)
     }
+  } catch (err) {
+    window.location.href = unidad.url
+  } finally {
+    setAbriendo(null)
   }
+}
 
   const iniciales = perfil?.nombre
     ? perfil.nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
