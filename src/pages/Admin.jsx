@@ -211,10 +211,10 @@ export default function Admin() {
           <div style={{ padding: '1.25rem 1.5rem', borderBottom: '0.5px solid #eef2f6' }}>
             <h2 style={{ fontSize: '15px', fontWeight: '500', color: '#022847', margin: 0 }}>Accesos por unidad</h2>
             {mensajePermiso && (
-  <span style={{ fontSize: '12px', color: '#1a7a4a', marginLeft: '12px' }}>
-    {mensajePermiso}
-  </span>
-)}
+              <span style={{ fontSize: '12px', color: '#1a7a4a', marginLeft: '12px' }}>
+                {mensajePermiso}
+              </span>
+            )}
           </div>
 
           <div style={{ overflowX: 'auto' }}>
