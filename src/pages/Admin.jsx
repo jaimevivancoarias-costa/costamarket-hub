@@ -20,6 +20,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
+  const [mensajePermiso, setMensajePermiso] = useState('')
   const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', rol: 'piloto', password: '' })
   const [creando, setCreando] = useState(false)
 
@@ -77,8 +78,8 @@ export default function Admin() {
         [usuarioId]: { ...(prev[usuarioId] || {}), [unidadId]: rolPorDefecto }
       }))
     }
-    setMensaje('Cambio guardado')
-    setTimeout(() => setMensaje(''), 2000)
+    setMensajePermiso('Cambio guardado')
+    setTimeout(() => setMensajePermiso(''), 2000)
   }
 
   async function cambiarRol(usuarioId, unidadId, nuevoRol) {
@@ -209,6 +210,11 @@ export default function Admin() {
         <div style={{ background: 'white', border: '0.5px solid #d4e0eb', borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ padding: '1.25rem 1.5rem', borderBottom: '0.5px solid #eef2f6' }}>
             <h2 style={{ fontSize: '15px', fontWeight: '500', color: '#022847', margin: 0 }}>Accesos por unidad</h2>
+            {mensajePermiso && (
+  <span style={{ fontSize: '12px', color: '#1a7a4a', marginLeft: '12px' }}>
+    {mensajePermiso}
+  </span>
+)}
           </div>
 
           <div style={{ overflowX: 'auto' }}>
