@@ -173,9 +173,6 @@ export default function Hub() {
               <div style={{ padding: '12px 14px 14px' }}>
                 <div style={{ fontSize: '15px', fontWeight: '600', color: '#022847', marginBottom: '4px' }}>
                   {unidad.nombre}
-                </div>
-                <div style={{ fontSize: '12px', color: '#7a9ab5', lineHeight: 1.5 }}
-                </div>
                 {!bloqueada && (
                   <div style={{ marginTop: '10px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '500', color: '#0D6CB0' }}>
