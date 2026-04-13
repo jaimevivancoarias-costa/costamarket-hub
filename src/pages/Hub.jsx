@@ -114,9 +114,6 @@ export default function Hub() {
         <h1 style={{ fontSize: '22px', fontWeight: '500', color: '#022847', margin: '0 0 4px' }}>
           Bienvenido{perfil?.nombre ? `, ${perfil.nombre.split(' ')[0]}.` : '.'}
         </h1>
-        <p style={{ fontSize: '13px', color: '#5a7a94', margin: 0 }}>
-          Todo CostaMarket, una sola pantalla.
-        </p>
       </div>
 
       {/* Grid de tarjetas */}
