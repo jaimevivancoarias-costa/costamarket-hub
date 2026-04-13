@@ -66,12 +66,15 @@ export default function Hub() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {perfil?.super_admin && (
-            <a href="/admin" style={{
-              fontSize: '11px', color: 'rgba(255,255,255,0.5)',
-              textDecoration: 'none', padding: '4px 8px',
-              border: '0.5px solid rgba(255,255,255,0.15)',
-              borderRadius: '6px',
-            }}>
+  <div style={{ textAlign: 'center', padding: '1rem 0 2rem' }}>
+    <a href="/admin" style={{
+      fontSize: '11px', color: '#c0d0dc',
+      textDecoration: 'none',
+    }}>
+      ⚙ administración
+    </a>
+  </div>
+)}
               Admin
             </a>
           )}
