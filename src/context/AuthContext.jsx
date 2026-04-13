@@ -46,16 +46,40 @@ export function AuthProvider({ children }) {
 
       setPerfil(usuarioData)
 
-      const { data: todasUnidades } = await supabase
-        .from('unidades_negocio')
-        .select('*')
-        .order('orden')
+      if (usuarioData.super_admin) {
+        const { data: todasUnidades } = await supabase
+          .from('unidades_negocio')
+          .select('*')
+          .order('orden')
+        setUnidades((todasUnidades || []).map(u => ({ ...u, unidad_id: u.id })))
+      } else {
+        const { data: misPermisos } = await supabase
+          .from('usuario_unidades')
+          .select('unidad_id, rol')
+          .eq('usuario_id', authId)
+          .eq('activo', true)
 
-      const lista = (todasUnidades || []).map(u => ({ ...u, unidad_id: u.id }))
-      setUnidades(lista)
+        const ids = (misPermisos || []).map(p => p.unidad_id)
+
+        if (ids.length === 0) { setUnidades([]); return }
+
+        const { data: misUnidades } = await supabase
+          .from('unidades_negocio')
+          .select('*')
+          .in('id', ids)
+          .order('orden')
+
+        const lista = (misUnidades || []).map(u => ({
+          ...u,
+          unidad_id: u.id,
+          rol: misPermisos.find(p => p.unidad_id === u.id)?.rol
+        }))
+
+        setUnidades(lista)
+      }
 
     } catch (err) {
-      console.error('Error cargando perfil:', err)
+      console.error('Error:', err)
     } finally {
       setLoading(false)
     }
