@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -7,14 +7,23 @@ const COSTADRON_URL = import.meta.env.VITE_COSTADRON_URL || 'https://costadron.v
 export default function Hub() {
   const { perfil, unidades, logout } = useAuth()
   const [abriendo, setAbriendo] = useState(null)
+  const [cols, setCols] = useState(
+    window.innerWidth < 600 ? '1fr' : window.innerWidth < 900 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'
+  )
 
-  console.log('unidades:', unidades)
+  useEffect(() => {
+    const handle = () => setCols(
+      window.innerWidth < 600 ? '1fr' : window.innerWidth < 900 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'
+    )
+    window.addEventListener('resize', handle)
+    return () => window.removeEventListener('resize', handle)
+  }, [])
 
   async function abrirUnidad(unidad) {
     if (!unidad.activa || !unidad.url) return
-    setAbriendo(unidad.id)
+    setAbriendo(unidad.unidad_id)
     try {
-      if (unidad.id === 'costadron') {
+      if (unidad.unidad_id === 'costadron') {
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
           window.open(`${COSTADRON_URL}?hub_token=${session.access_token}`, '_blank')
@@ -42,7 +51,7 @@ export default function Hub() {
       <div style={{
         background: '#022847',
         height: '56px',
-        padding: '0 2rem',
+        padding: '0 1rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -51,15 +60,15 @@ export default function Hub() {
           <img
             src="/logo.png"
             alt="CostaMarket"
-            style={{ height: '38px', width: 'auto' }}
+            style={{ height: '34px', width: 'auto' }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {perfil?.super_admin && (
             <a href="/admin" style={{
-              fontSize: '12px', color: 'rgba(255,255,255,0.5)',
-              textDecoration: 'none', padding: '4px 10px',
+              fontSize: '11px', color: 'rgba(255,255,255,0.5)',
+              textDecoration: 'none', padding: '4px 8px',
               border: '0.5px solid rgba(255,255,255,0.15)',
               borderRadius: '6px',
             }}>
@@ -67,26 +76,26 @@ export default function Hub() {
             </a>
           )}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
+            display: 'flex', alignItems: 'center', gap: '6px',
             background: 'rgba(255,255,255,0.08)',
             border: '0.5px solid rgba(255,255,255,0.15)',
-            borderRadius: '20px', padding: '4px 12px 4px 5px',
+            borderRadius: '20px', padding: '4px 10px 4px 5px',
           }}>
             <div style={{
-              width: '24px', height: '24px', borderRadius: '50%',
+              width: '22px', height: '22px', borderRadius: '50%',
               background: '#0D6CB0',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '10px', fontWeight: '500', color: 'white',
+              fontSize: '9px', fontWeight: '500', color: 'white',
             }}>{iniciales}</div>
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>
-              {perfil?.nombre?.split(' ')[0]} · {perfil?.super_admin ? 'Super admin' : perfil?.rol}
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>
+              {perfil?.nombre?.split(' ')[0]}
             </span>
           </div>
           <button
             onClick={logout}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'rgba(255,255,255,0.4)', fontSize: '12px', padding: '4px',
+              color: 'rgba(255,255,255,0.4)', fontSize: '11px', padding: '4px',
             }}
           >
             Salir
@@ -95,17 +104,17 @@ export default function Hub() {
       </div>
 
       {/* Hero */}
-      <div style={{ maxWidth: '980px', margin: '0 auto', padding: '2.5rem 2rem 1.5rem' }}>
+      <div style={{ maxWidth: '980px', margin: '0 auto', padding: '2rem 1rem 1.25rem' }}>
         <div style={{
-          fontSize: '11px', fontWeight: '500', letterSpacing: '0.1em',
+          fontSize: '10px', fontWeight: '500', letterSpacing: '0.1em',
           color: '#0D6CB0', textTransform: 'uppercase', marginBottom: '6px',
         }}>
           Panel de control · CostaMarket
         </div>
-        <h1 style={{ fontSize: '26px', fontWeight: '500', color: '#022847', margin: '0 0 6px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: '500', color: '#022847', margin: '0 0 4px' }}>
           Bienvenido{perfil?.nombre ? `, ${perfil.nombre.split(' ')[0]}.` : '.'}
         </h1>
-        <p style={{ fontSize: '14px', color: '#5a7a94', margin: 0 }}>
+        <p style={{ fontSize: '13px', color: '#5a7a94', margin: 0 }}>
           Todo CostaMarket, una sola pantalla.
         </p>
       </div>
@@ -113,10 +122,10 @@ export default function Hub() {
       {/* Grid de tarjetas */}
       <div style={{
         maxWidth: '980px', margin: '0 auto',
-        padding: '0 2rem 3rem',
+        padding: '0 1rem 3rem',
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '14px',
+        gridTemplateColumns: cols,
+        gap: '12px',
       }}>
         {unidades.map(unidad => {
           const bloqueada = !unidad.activa
@@ -144,7 +153,7 @@ export default function Hub() {
             >
               {/* Banner */}
               <div style={{
-                height: '120px',
+                height: '140px',
                 backgroundImage: 'url(/' + unidad.unidad_id + '-card.jpg)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -164,7 +173,7 @@ export default function Hub() {
               </div>
 
               {/* Cuerpo */}
-              <div style={{ padding: '14px 16px 16px' }}>
+              <div style={{ padding: '12px 14px 14px' }}>
                 <div style={{ fontSize: '15px', fontWeight: '600', color: '#022847', marginBottom: '4px' }}>
                   {unidad.nombre}
                 </div>
@@ -172,7 +181,7 @@ export default function Hub() {
                   {unidad.descripcion}
                 </div>
                 {!bloqueada && (
-                  <div style={{ marginTop: '12px' }}>
+                  <div style={{ marginTop: '10px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '500', color: '#0D6CB0' }}>
                       {cargando ? 'Abriendo...' : 'Abrir →'}
                     </span>
