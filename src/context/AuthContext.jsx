@@ -42,28 +42,18 @@ export function AuthProvider({ children }) {
         .eq('id', authId)
         .single()
 
-      if (!usuarioData) {
-        setLoading(false)
-        return
-      }
+      if (!usuarioData) { setLoading(false); return }
 
       setPerfil(usuarioData)
 
-      if (usuarioData.super_admin) {
-        const { data: todasUnidades } = await supabase
-          .from('unidades_negocio')
-          .select('*')
-          .order('orden')
-        setUnidades(todasUnidades || [])
-      } else {
-        const { data: misUnidades } = await supabase
-  .from('unidades_negocio')
-  .select('*, usuario_unidades!inner(rol)')
-  .eq('usuario_unidades.usuario_id', authId)
-  .eq('usuario_unidades.activo', true)
-  .order('orden')
-setUnidades((misUnidades || []).map(u => ({ ...u, unidad_id: u.id, rol: u.usuario_unidades[0]?.rol })))
-      }
+      const { data: todasUnidades } = await supabase
+        .from('unidades_negocio')
+        .select('*')
+        .order('orden')
+
+      const lista = (todasUnidades || []).map(u => ({ ...u, unidad_id: u.id }))
+      setUnidades(lista)
+
     } catch (err) {
       console.error('Error cargando perfil:', err)
     } finally {
