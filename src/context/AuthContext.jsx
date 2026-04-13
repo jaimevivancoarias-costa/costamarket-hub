@@ -57,8 +57,12 @@ export function AuthProvider({ children }) {
         setUnidades(todasUnidades || [])
       } else {
         const { data: misUnidades } = await supabase
-          .rpc('get_unidades_usuario', { uid: authId })
-        setUnidades(misUnidades || [])
+  .from('unidades_negocio')
+  .select('*, usuario_unidades!inner(rol)')
+  .eq('usuario_unidades.usuario_id', authId)
+  .eq('usuario_unidades.activo', true)
+  .order('orden')
+setUnidades((misUnidades || []).map(u => ({ ...u, unidad_id: u.id, rol: u.usuario_unidades[0]?.rol })))
       }
     } catch (err) {
       console.error('Error cargando perfil:', err)
