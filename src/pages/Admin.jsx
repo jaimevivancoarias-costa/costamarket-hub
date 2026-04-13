@@ -55,7 +55,7 @@ export default function Admin() {
     setLoading(false)
   }
 
-  async function togglePermiso(usuarioId, unidadId, rolActual) {
+ async function togglePermiso(usuarioId, unidadId, rolActual) {
     if (rolActual) {
       await supabase
         .from('usuario_unidades')
@@ -77,6 +77,8 @@ export default function Admin() {
         [usuarioId]: { ...(prev[usuarioId] || {}), [unidadId]: rolPorDefecto }
       }))
     }
+    setMensaje('Cambio guardado')
+    setTimeout(() => setMensaje(''), 2000)
   }
 
   async function cambiarRol(usuarioId, unidadId, nuevoRol) {
