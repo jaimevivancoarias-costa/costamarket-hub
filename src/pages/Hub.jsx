@@ -148,27 +148,26 @@ export default function Hub() {
                 e.currentTarget.style.borderColor = '#d4e0eb'
               }}
             >
-              {/* Banner */}
-              <div style={{
-                height: '140px',
-                backgroundImage: 'url(/' + unidad.unidad_id + '-card.jpg)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                position: 'relative',
-              }}>
-                {bloqueada && (
-                  <div style={{
-                    position: 'absolute', top: '10px', right: '10px',
-                    background: 'rgba(0,0,0,0.3)',
-                    color: 'rgba(255,255,255,0.7)',
-                    fontSize: '10px', fontWeight: '500', letterSpacing: '0.05em',
-                    padding: '3px 9px', borderRadius: '20px', textTransform: 'uppercase',
-                  }}>
-                    Próximamente
-                  </div>
-                )}
-              </div>
-
+             {/* Banner */}
+<div style={{
+  height: '140px',
+  backgroundImage: 'url(/' + unidad.unidad_id + '-card.jpg)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  position: 'relative',
+}}>
+  {bloqueada && (
+    <div style={{
+      position: 'absolute', top: '10px', right: '10px',
+      background: 'rgba(0,0,0,0.3)',
+      color: 'rgba(255,255,255,0.7)',
+      fontSize: '10px', fontWeight: '500', letterSpacing: '0.05em',
+      padding: '3px 9px', borderRadius: '20px', textTransform: 'uppercase',
+    }}>
+      Próximamente
+    </div>
+  )}
+</div>
               {/* Cuerpo */}
               <div style={{ padding: '12px 14px 14px' }}>
                 <div style={{ fontSize: '15px', fontWeight: '600', color: '#022847', marginBottom: '4px' }}>
