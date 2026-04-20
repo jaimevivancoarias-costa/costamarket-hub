@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
 const COSTADRON_URL = import.meta.env.VITE_COSTADRON_URL || 'https://costadron.vercel.app'
+const COSTALOGISTICS_URL = import.meta.env.VITE_COSTALOGISTICS_URL || 'https://costalogistics.vercel.app'
 
 export default function Hub() {
   const { perfil, unidades, logout } = useAuth()
@@ -23,16 +24,18 @@ async function abrirUnidad(unidad) {
   if (!unidad.activa || !unidad.url) return
   setAbriendo(unidad.unidad_id)
   try {
-    if (unidad.unidad_id === 'costadron') {
+    const usaSSO = ['costadron', 'coastalogistics'].includes(unidad.unidad_id)
+    if (usaSSO) {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
+        const baseUrl = unidad.unidad_id === 'costadron' ? COSTADRON_URL : COSTALOGISTICS_URL
         const params = new URLSearchParams({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         })
-        window.location.href = `${COSTADRON_URL}?${params.toString()}`
+        window.location.href = `${baseUrl}?${params.toString()}`
       } else {
-        window.location.href = COSTADRON_URL
+        window.location.href = unidad.url
       }
     } else {
       window.location.href = unidad.url
