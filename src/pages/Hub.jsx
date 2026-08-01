@@ -5,6 +5,20 @@ import { supabase } from '../lib/supabase'
 const COSTADRON_URL = import.meta.env.VITE_COSTADRON_URL || 'https://costadron.vercel.app'
 const COSTALOGISTICS_URL = import.meta.env.VITE_COSTALOGISTICS_URL || 'https://costalogistics.vercel.app'
 
+// Overrides de presentacion por unidad (no toca la base de datos).
+// Permite renombrar el card y usar una imagen con nombre/extension distinta.
+const OVERRIDES = {
+  costaice: { nombre: 'Produccion', imagen: '/produccion-card.png' },
+}
+
+function tituloUnidad(unidad) {
+  return OVERRIDES[unidad.unidad_id]?.nombre || unidad.nombre
+}
+
+function imagenUnidad(unidad) {
+  return OVERRIDES[unidad.unidad_id]?.imagen || '/' + unidad.unidad_id + '-card.jpg'
+}
+
 export default function Hub() {
   const { perfil, unidades, logout } = useAuth()
   const [abriendo, setAbriendo] = useState(null)
@@ -86,7 +100,7 @@ async function abrirUnidad(unidad) {
               onMouseEnter={e => { if (!bloqueada) e.currentTarget.style.borderColor = '#0D6CB0' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#d4e0eb' }}
             >
-              <div style={{ height: '140px', backgroundImage: 'url(/' + unidad.unidad_id + '-card.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
+              <div style={{ height: '140px', backgroundImage: 'url(' + imagenUnidad(unidad) + ')', backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
                 {bloqueada && (
                   <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.3)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: '500', letterSpacing: '0.05em', padding: '3px 9px', borderRadius: '20px', textTransform: 'uppercase' }}>
                     Proximamente
@@ -94,7 +108,7 @@ async function abrirUnidad(unidad) {
                 )}
               </div>
               <div style={{ padding: '12px 14px 14px' }}>
-                <div style={{ fontSize: '15px', fontWeight: '600', color: '#022847', marginBottom: '4px' }}>{unidad.nombre}</div>
+                <div style={{ fontSize: '15px', fontWeight: '600', color: '#022847', marginBottom: '4px' }}>{tituloUnidad(unidad)}</div>
                 {!bloqueada && (
                   <div style={{ marginTop: '10px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '500', color: '#0D6CB0' }}>{cargando ? 'Abriendo...' : 'Abrir'}</span>
