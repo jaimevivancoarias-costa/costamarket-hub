@@ -4,6 +4,15 @@ import { supabase } from '../lib/supabase'
 
 const COSTADRON_URL = import.meta.env.VITE_COSTADRON_URL || 'https://costadron.vercel.app'
 const COSTALOGISTICS_URL = import.meta.env.VITE_COSTALOGISTICS_URL || 'https://costalogistics.vercel.app'
+const COSTAPRODUCCION_URL = import.meta.env.VITE_COSTAPRODUCCION_URL || 'https://costaproduccion.vercel.app'
+
+// Unidades que reciben la sesion por URL. La clave es el id que tiene
+// la unidad en la base, no el nombre que se muestra en el card.
+const SSO = {
+  costadron: COSTADRON_URL,
+  coastalogistics: COSTALOGISTICS_URL,
+  costaice: COSTAPRODUCCION_URL,
+}
 
 // Overrides de presentacion por unidad (no toca la base de datos).
 // Permite renombrar el card y usar una imagen con nombre/extension distinta.
@@ -38,11 +47,10 @@ async function abrirUnidad(unidad) {
   if (!unidad.activa || !unidad.url) return
   setAbriendo(unidad.unidad_id)
   try {
-    const usaSSO = ['costadron', 'coastalogistics'].includes(unidad.unidad_id)
-    if (usaSSO) {
+    const baseUrl = SSO[unidad.unidad_id]
+    if (baseUrl) {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        const baseUrl = unidad.unidad_id === 'costadron' ? COSTADRON_URL : COSTALOGISTICS_URL
         const params = new URLSearchParams({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
