@@ -6,11 +6,19 @@ import { useAuth } from '../context/AuthContext'
 const UNIDADES = [
   { id: 'costadron', nombre: 'COSTADRON' },
   { id: 'coastalogistics', nombre: 'CostaLogistics' },
-  { id: 'costaice', nombre: 'CostaICE' },
+  { id: 'costaice', nombre: 'Producción' },
   { id: 'costatech', nombre: 'CostaTech' },
   { id: 'costamarket', nombre: 'CostaMarket' },
   { id: 'costabac', nombre: 'CostaBac' },
 ]
+
+// Roles disponibles por módulo. Producción (costaice) usa los roles reales
+// de la finca; el resto un set genérico del Hub.
+const ROLES_POR_UNIDAD = {
+  costaice: [['bodeguero', 'Bodeguero'], ['contador', 'Contadora'], ['jefe', 'Jefe']],
+}
+const ROLES_DEFAULT = [['piloto', 'Piloto'], ['jefe', 'Jefe'], ['viewer', 'Viewer'], ['admin', 'Admin']]
+const rolesDeUnidad = id => ROLES_POR_UNIDAD[id] || ROLES_DEFAULT
 
 export default function Admin() {
   const { perfil } = useAuth()
@@ -78,7 +86,7 @@ export default function Admin() {
         return copia
       })
     } else {
-      const rolPorDefecto = unidadId === 'costadron' ? 'piloto' : 'viewer'
+      const rolPorDefecto = unidadId === 'costadron' ? 'piloto' : unidadId === 'costaice' ? 'bodeguero' : 'viewer'
       await supabase
         .from('usuario_unidades')
         .insert({ usuario_id: usuarioId, unidad_id: unidadId, rol: rolPorDefecto, activo: true })
@@ -309,10 +317,9 @@ export default function Admin() {
                                 onChange={e => cambiarRol(usuario.id, unidad.id, e.target.value)}
                                 style={{ fontSize: '11px', padding: '3px 6px', border: '1px solid #0D6CB0', borderRadius: '5px', color: '#0D6CB0', background: '#e6f1fb' }}
                               >
-                                <option value="piloto">Piloto</option>
-                                <option value="jefe">Jefe</option>
-                                <option value="viewer">Viewer</option>
-                                <option value="admin">Admin</option>
+                                {rolesDeUnidad(unidad.id).map(([v, l]) => (
+                                  <option key={v} value={v}>{l}</option>
+                                ))}
                               </select>
                               <button
                                 onClick={() => togglePermiso(usuario.id, unidad.id, rolActual)}
