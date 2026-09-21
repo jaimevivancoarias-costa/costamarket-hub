@@ -37,6 +37,8 @@ export default function Admin() {
   const [fincas, setFincas] = useState([])       // fincas de producción para el selector
   const [fincaSel, setFincaSel] = useState('')   // finca elegida en el selector
   const [rolFincaSel, setRolFincaSel] = useState('bodeguero')
+  const [fincasMsg, setFincasMsg] = useState('') // aviso si no cargan las fincas
+  const [dronZona, setDronZona] = useState('Jambelí')  // zona del piloto/contador de CostaDron
 
   useEffect(() => {
     if (perfil && !perfil.super_admin) navigate('/hub')
@@ -71,9 +73,14 @@ export default function Admin() {
 
     // Fincas de producción para el selector (vía la función segura).
     try {
-      const { data: fr } = await supabase.functions.invoke('admin-usuarios', { body: { action: 'fincas' } })
-      if (fr?.fincas) setFincas(fr.fincas)
-    } catch { /* si falla, el selector queda vacío */ }
+      const { data: fr, error: fe } = await supabase.functions.invoke('admin-usuarios', { body: { action: 'fincas' } })
+      if (fe) setFincasMsg('No se pudieron cargar las fincas: ' + fe.message + ' (¿la función admin-usuarios está desplegada?)')
+      else if (fr?.error) setFincasMsg('No se pudieron cargar las fincas: ' + fr.error)
+      else if (fr?.fincas?.length) { setFincas(fr.fincas); setFincasMsg('') }
+      else setFincasMsg('No llegaron fincas. Revisa que la función admin-usuarios esté desplegada y actualizada.')
+    } catch (e) {
+      setFincasMsg('No se pudieron cargar las fincas: ' + e.message)
+    }
   }
 
  async function togglePermiso(usuarioId, unidadId, rolActual) {
@@ -124,6 +131,7 @@ export default function Admin() {
       const unidades = Object.keys(nuevoUsuario.modulos)
         .map(id => ({ unidad_id: id, rol: id === 'costaice' ? rolProd : nuevoUsuario.modulos[id] }))
       const perfilRol = nuevoUsuario.modulos.costadron || 'materiales'
+      const perfilZona = nuevoUsuario.modulos.costadron ? dronZona : null
 
       const { data, error } = await supabase.functions.invoke('admin-usuarios', {
         body: {
@@ -132,6 +140,7 @@ export default function Admin() {
           email: nuevoUsuario.email,
           password: nuevoUsuario.password,
           perfilRol,
+          perfilZona,
           unidades,
           fincas: nuevoUsuario.fincas,
         },
@@ -187,14 +196,14 @@ export default function Admin() {
               <input style={{ ...estiloInput, width: '100%', boxSizing: 'border-box' }}
                 value={nuevoUsuario.nombre}
                 onChange={e => setNuevoUsuario(p => ({ ...p, nombre: e.target.value }))}
-                placeholder="Italo Alcivar" />
+                placeholder="Nombre y apellido" />
             </div>
             <div>
               <label style={labelSt}>Correo</label>
               <input style={{ ...estiloInput, width: '100%', boxSizing: 'border-box' }}
                 type="email" value={nuevoUsuario.email}
                 onChange={e => setNuevoUsuario(p => ({ ...p, email: e.target.value }))}
-                placeholder="italo@costamarket.ec" />
+                placeholder="correo@costamarket.ec" />
             </div>
             <div>
               <label style={labelSt}>Contraseña (la pones tú)</label>
@@ -229,6 +238,13 @@ export default function Admin() {
                       {rolesDeUnidad(u.id).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                   )}
+                  {on && u.id === 'costadron' && (
+                    <select style={{ ...estiloInput, width: '100%', boxSizing: 'border-box', marginTop: '6px', fontSize: '12px' }}
+                      value={dronZona} onChange={e => setDronZona(e.target.value)}>
+                      <option value="Jambelí">Zona Jambelí</option>
+                      <option value="Puná">Zona Puná</option>
+                    </select>
+                  )}
                 </div>
               )
             })}
@@ -236,7 +252,12 @@ export default function Admin() {
 
           {nuevoUsuario.modulos.costaice && (
             <div style={{ border: '0.5px dashed #0D6CB0', background: '#f2f8fd', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>
-              <div style={{ fontSize: '12px', color: '#0D6CB0', fontWeight: 600, marginBottom: '8px' }}>Producción · finca y rol</div>
+              <div style={{ fontSize: '12px', color: '#0D6CB0', fontWeight: 600, marginBottom: '8px' }}>Producción · finca y rol (puedes agregar varias)</div>
+              {fincasMsg && (
+                <div style={{ fontSize: '12px', color: '#b45309', background: '#fef3c7', borderRadius: '7px', padding: '8px 10px', marginBottom: '10px' }}>
+                  {fincasMsg}
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
                 <div>
                   <label style={labelSt}>Finca</label>
