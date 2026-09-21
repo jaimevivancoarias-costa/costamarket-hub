@@ -61,6 +61,12 @@ Deno.serve(async (req) => {
       if (!nombre || !email || !password) return json({ error: 'Faltan nombre, correo o contraseña.' }, 400)
       if (password.length < 6) return json({ error: 'La contraseña debe tener al menos 6 caracteres.' }, 400)
 
+      // 'rol' del perfil (usuarios.rol) SÍ lo usa CostaDron como su rol. Se toma
+      // del rol de CostaDron si viene; si no, un valor básico válido. Solo se
+      // aceptan valores permitidos por el check de la tabla.
+      const rolesValidos = ['piloto', 'jefe', 'jefe_visor', 'supervisor', 'contador', 'materiales']
+      const perfilRol = rolesValidos.includes(body.perfilRol) ? body.perfilRol : 'materiales'
+
       // Crear la cuenta ya confirmada (no necesita verificar correo)
       const { data: created, error: cErr } = await admin.auth.admin.createUser({
         email, password, email_confirm: true,
@@ -68,10 +74,8 @@ Deno.serve(async (req) => {
       if (cErr) return json({ error: cErr.message }, 400)
       const uid = created.user.id
 
-      // Perfil visible en el Hub. 'rol' es un campo técnico que la app no usa
-      // para permisos; se deja en 'materiales' (básico).
       const { error: pErr } = await admin.from('usuarios').upsert({
-        id: uid, nombre, email, rol: 'materiales', activo: true, super_admin: false,
+        id: uid, nombre, email, rol: perfilRol, activo: true, super_admin: false,
       }, { onConflict: 'id' })
       if (pErr) return json({ error: 'Cuenta creada, pero falló el perfil: ' + pErr.message }, 400)
 

@@ -4,13 +4,24 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 const UNIDADES = [
-  { id: 'costadron', nombre: 'COSTADRON' },
-  { id: 'coastalogistics', nombre: 'CostaLogistics' },
-  { id: 'costaice', nombre: 'CostaICE' },
-  { id: 'costatech', nombre: 'CostaTech' },
-  { id: 'costamarket', nombre: 'CostaMarket' },
-  { id: 'costabac', nombre: 'CostaBac' },
+  { id: 'costadron', nombre: 'COSTADRON', activa: true },
+  { id: 'coastalogistics', nombre: 'CostaLogistics', activa: true },
+  { id: 'costaice', nombre: 'Producción', activa: true },
+  { id: 'costatech', nombre: 'CostaTech', activa: false },
+  { id: 'costamarket', nombre: 'CostaMarket', activa: false },
+  { id: 'costabac', nombre: 'CostaBac', activa: false },
 ]
+
+// Roles disponibles por módulo, según lo que cada app reconoce.
+//   CostaDron -> usuarios.rol   CostaLogistics -> usuario_unidades.rol
+//   Producción -> usuario_finca.rol (se elige por finca, no acá).
+const ROLES_POR_UNIDAD = {
+  costadron: [['piloto', 'Piloto'], ['jefe', 'Jefe'], ['contador', 'Contadora']],
+  coastalogistics: [['jefe', 'Jefe'], ['jefe_visor', 'Jefe visor'], ['supervisor', 'Supervisor'], ['materiales', 'Materiales (solo materiales/devoluciones)']],
+  costaice: [['bodeguero', 'Bodeguero'], ['contador', 'Contadora'], ['jefe', 'Jefe']],
+}
+const ROLES_DEFAULT = [['piloto', 'Piloto'], ['jefe', 'Jefe'], ['viewer', 'Viewer'], ['admin', 'Admin']]
+const rolesDeUnidad = id => ROLES_POR_UNIDAD[id] || ROLES_DEFAULT
 
 export default function Admin() {
   const { perfil } = useAuth()
@@ -78,7 +89,7 @@ export default function Admin() {
         return copia
       })
     } else {
-      const rolPorDefecto = unidadId === 'costadron' ? 'piloto' : 'viewer'
+      const rolPorDefecto = unidadId === 'costadron' ? 'piloto' : unidadId === 'costaice' ? 'bodeguero' : 'viewer'
       await supabase
         .from('usuario_unidades')
         .insert({ usuario_id: usuarioId, unidad_id: unidadId, rol: rolPorDefecto, activo: true })
@@ -107,12 +118,12 @@ export default function Admin() {
     if (!nuevoUsuario.nombre || !nuevoUsuario.email || !nuevoUsuario.password) return
     setCreando(true)
     try {
-      // Módulos marcados -> lista { unidad_id, rol }. Producción (costaice)
-      // toma el rol del primer acceso de finca; el resto un rol básico.
+      // Cada módulo marcado con su rol. Producción (costaice) toma el rol del
+      // primer acceso de finca. CostaDron define además el rol del perfil.
       const rolProd = nuevoUsuario.fincas[0]?.rol || 'bodeguero'
       const unidades = Object.keys(nuevoUsuario.modulos)
-        .filter(id => nuevoUsuario.modulos[id])
-        .map(id => ({ unidad_id: id, rol: id === 'costaice' ? rolProd : (id === 'costadron' ? 'piloto' : 'materiales') }))
+        .map(id => ({ unidad_id: id, rol: id === 'costaice' ? rolProd : nuevoUsuario.modulos[id] }))
+      const perfilRol = nuevoUsuario.modulos.costadron || 'materiales'
 
       const { data, error } = await supabase.functions.invoke('admin-usuarios', {
         body: {
@@ -120,6 +131,7 @@ export default function Admin() {
           nombre: nuevoUsuario.nombre,
           email: nuevoUsuario.email,
           password: nuevoUsuario.password,
+          perfilRol,
           unidades,
           fincas: nuevoUsuario.fincas,
         },
@@ -193,18 +205,31 @@ export default function Admin() {
             </div>
           </div>
 
-          <label style={labelSt}>Módulos que puede ver</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: '8px', marginBottom: '12px' }}>
-            {UNIDADES.map(u => {
-              const on = !!nuevoUsuario.modulos[u.id]
+          <label style={labelSt}>Módulos y rol</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(230px,1fr))', gap: '8px', marginBottom: '12px' }}>
+            {UNIDADES.filter(u => u.activa).map(u => {
+              const on = nuevoUsuario.modulos[u.id] != null
               const etq = u.id === 'costaice' ? 'Producción' : u.nombre
               return (
-                <label key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px',
-                  border: '0.5px solid ' + (on ? '#0D6CB0' : '#d4e0eb'), background: on ? '#f2f8fd' : 'white', borderRadius: '9px', padding: '9px 11px' }}>
-                  <input type="checkbox" checked={on}
-                    onChange={() => setNuevoUsuario(p => ({ ...p, modulos: { ...p.modulos, [u.id]: !p.modulos[u.id] } }))} />
-                  {etq}
-                </label>
+                <div key={u.id} style={{ border: '0.5px solid ' + (on ? '#0D6CB0' : '#d4e0eb'), background: on ? '#f2f8fd' : 'white', borderRadius: '9px', padding: '9px 11px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px' }}>
+                    <input type="checkbox" checked={on}
+                      onChange={() => setNuevoUsuario(p => {
+                        const m = { ...p.modulos }
+                        if (on) delete m[u.id]
+                        else m[u.id] = u.id === 'costaice' ? 'si' : rolesDeUnidad(u.id)[0][0]
+                        return { ...p, modulos: m }
+                      })} />
+                    {etq}
+                  </label>
+                  {on && u.id !== 'costaice' && (
+                    <select style={{ ...estiloInput, width: '100%', boxSizing: 'border-box', marginTop: '8px', fontSize: '12px' }}
+                      value={nuevoUsuario.modulos[u.id]}
+                      onChange={e => setNuevoUsuario(p => ({ ...p, modulos: { ...p.modulos, [u.id]: e.target.value } }))}>
+                      {rolesDeUnidad(u.id).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
+                  )}
+                </div>
               )
             })}
           </div>
@@ -309,10 +334,9 @@ export default function Admin() {
                                 onChange={e => cambiarRol(usuario.id, unidad.id, e.target.value)}
                                 style={{ fontSize: '11px', padding: '3px 6px', border: '1px solid #0D6CB0', borderRadius: '5px', color: '#0D6CB0', background: '#e6f1fb' }}
                               >
-                                <option value="piloto">Piloto</option>
-                                <option value="jefe">Jefe</option>
-                                <option value="viewer">Viewer</option>
-                                <option value="admin">Admin</option>
+                                {rolesDeUnidad(unidad.id).map(([v, l]) => (
+                                  <option key={v} value={v}>{l}</option>
+                                ))}
                               </select>
                               <button
                                 onClick={() => togglePermiso(usuario.id, unidad.id, rolActual)}
