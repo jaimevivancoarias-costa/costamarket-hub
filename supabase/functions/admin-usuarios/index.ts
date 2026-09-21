@@ -107,6 +107,35 @@ Deno.serve(async (req) => {
       return json({ ok: true, id: uid })
     }
 
+    // 4) Editar: nombre y/o contraseña
+    if (action === 'editar') {
+      const id = String(body.id || '')
+      if (!id) return json({ error: 'Falta el usuario.' }, 400)
+      const nombre = body.nombre != null ? String(body.nombre).trim() : null
+      const password = body.password ? String(body.password) : null
+      if (nombre) {
+        const { error } = await admin.from('usuarios').update({ nombre }).eq('id', id)
+        if (error) return json({ error: 'No se pudo cambiar el nombre: ' + error.message }, 400)
+      }
+      if (password) {
+        if (password.length < 6) return json({ error: 'La contraseña debe tener al menos 6 caracteres.' }, 400)
+        const { error } = await admin.auth.admin.updateUserById(id, { password })
+        if (error) return json({ error: 'No se pudo cambiar la contraseña: ' + error.message }, 400)
+      }
+      return json({ ok: true })
+    }
+
+    // 5) Desactivar / reactivar (no borra: bloquea el login y oculta de la lista)
+    if (action === 'desactivar') {
+      const id = String(body.id || '')
+      if (!id) return json({ error: 'Falta el usuario.' }, 400)
+      const activar = body.activar === true
+      const { error } = await admin.from('usuarios').update({ activo: activar }).eq('id', id)
+      if (error) return json({ error: error.message }, 400)
+      await admin.auth.admin.updateUserById(id, { ban_duration: activar ? 'none' : '876000h' })
+      return json({ ok: true })
+    }
+
     return json({ error: 'Acción desconocida.' }, 400)
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 500)
