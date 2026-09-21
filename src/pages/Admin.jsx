@@ -265,6 +265,7 @@ export default function Admin() {
                       value={dronZona} onChange={e => setDronZona(e.target.value)}>
                       <option value="Jambelí">Zona Jambelí</option>
                       <option value="Puná">Zona Puná</option>
+                      <option value="Ambas">Ambas zonas</option>
                     </select>
                   )}
                 </div>
@@ -369,10 +370,10 @@ export default function Admin() {
                       <div style={{ fontSize: '11px', color: '#7a9ab5' }}>{usuario.email || usuario.rol}</div>
                       <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
                         <button onClick={() => setEditUser({ id: usuario.id, nombre: usuario.nombre, password: '' })}
-                          style={{ fontSize: '11px', color: '#0D6CB0', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>editar</button>
+                          style={{ fontSize: '11px', color: '#0D6CB0', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Editar</button>
                         <button onClick={() => toggleActivo(usuario)}
                           style={{ fontSize: '11px', color: usuario.activo ? '#dc2626' : '#1a7a4a', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                          {usuario.activo ? 'desactivar' : 'reactivar'}</button>
+                          {usuario.activo ? 'Desactivar' : 'Reactivar'}</button>
                       </div>
                     </td>
                     {UNIDADES.map(unidad => {
@@ -394,7 +395,7 @@ export default function Admin() {
                                 onClick={() => togglePermiso(usuario.id, unidad.id, rolActual)}
                                 style={{ fontSize: '10px', color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
                               >
-                                quitar
+                                Quitar
                               </button>
                             </div>
                           ) : (
