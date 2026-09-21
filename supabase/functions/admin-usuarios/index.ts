@@ -66,6 +66,9 @@ Deno.serve(async (req) => {
       // aceptan valores permitidos por el check de la tabla.
       const rolesValidos = ['piloto', 'jefe', 'jefe_visor', 'supervisor', 'contador', 'materiales']
       const perfilRol = rolesValidos.includes(body.perfilRol) ? body.perfilRol : 'materiales'
+      // Zona del perfil (la usa CostaDron para ubicar al piloto/contador).
+      const zonasValidas = ['Jambelí', 'Puná']
+      const perfilZona = zonasValidas.includes(body.perfilZona) ? body.perfilZona : null
 
       // Crear la cuenta ya confirmada (no necesita verificar correo)
       const { data: created, error: cErr } = await admin.auth.admin.createUser({
@@ -75,7 +78,7 @@ Deno.serve(async (req) => {
       const uid = created.user.id
 
       const { error: pErr } = await admin.from('usuarios').upsert({
-        id: uid, nombre, email, rol: perfilRol, activo: true, super_admin: false,
+        id: uid, nombre, email, rol: perfilRol, zona: perfilZona, activo: true, super_admin: false,
       }, { onConflict: 'id' })
       if (pErr) return json({ error: 'Cuenta creada, pero falló el perfil: ' + pErr.message }, 400)
 
