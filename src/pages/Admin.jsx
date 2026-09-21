@@ -39,6 +39,7 @@ export default function Admin() {
   const [rolFincaSel, setRolFincaSel] = useState('bodeguero')
   const [fincasMsg, setFincasMsg] = useState('') // aviso si no cargan las fincas
   const [dronZona, setDronZona] = useState('Jambelí')  // zona del piloto/contador de CostaDron
+  const [editUser, setEditUser] = useState(null)  // { id, nombre, password } al editar
 
   useEffect(() => {
     if (perfil && !perfil.super_admin) navigate('/hub')
@@ -53,7 +54,7 @@ export default function Admin() {
     const { data: usrs } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('activo', true)
+      .order('activo', { ascending: false })
       .order('nombre')
 
     const { data: perms } = await supabase
@@ -107,6 +108,27 @@ export default function Admin() {
     }
     setMensajePermiso('Cambio guardado')
     setTimeout(() => setMensajePermiso(''), 2000)
+  }
+
+  async function guardarEdicion() {
+    if (!editUser) return
+    const { data, error } = await supabase.functions.invoke('admin-usuarios', {
+      body: { action: 'editar', id: editUser.id, nombre: editUser.nombre, password: editUser.password || null },
+    })
+    if (error || data?.error) { setMensajePermiso('Error: ' + (data?.error || error.message)) }
+    else { setMensajePermiso('Usuario actualizado'); setEditUser(null); cargarDatos() }
+    setTimeout(() => setMensajePermiso(''), 3000)
+  }
+
+  async function toggleActivo(u) {
+    const activar = !u.activo
+    if (!activar && !window.confirm(`¿Desactivar a ${u.nombre}? No podrá entrar a ningún módulo. Se puede reactivar después.`)) return
+    const { data, error } = await supabase.functions.invoke('admin-usuarios', {
+      body: { action: 'desactivar', id: u.id, activar },
+    })
+    if (error || data?.error) { setMensajePermiso('Error: ' + (data?.error || error.message)) }
+    else { setMensajePermiso(activar ? 'Usuario reactivado' : 'Usuario desactivado'); cargarDatos() }
+    setTimeout(() => setMensajePermiso(''), 3000)
   }
 
   async function cambiarRol(usuarioId, unidadId, nuevoRol) {
@@ -339,10 +361,19 @@ export default function Admin() {
               </thead>
               <tbody>
                 {usuarios.map((usuario, i) => (
-                  <tr key={usuario.id} style={{ borderTop: '0.5px solid #eef2f6', background: i % 2 === 0 ? 'white' : '#fafbfc' }}>
+                  <tr key={usuario.id} style={{ borderTop: '0.5px solid #eef2f6', background: i % 2 === 0 ? 'white' : '#fafbfc', opacity: usuario.activo ? 1 : 0.5 }}>
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: '500', color: '#022847' }}>{usuario.nombre}</div>
+                      <div style={{ fontWeight: '500', color: '#022847' }}>
+                        {usuario.nombre}{!usuario.activo && <span style={{ fontSize: '10px', color: '#b45309', marginLeft: '6px' }}>(inactivo)</span>}
+                      </div>
                       <div style={{ fontSize: '11px', color: '#7a9ab5' }}>{usuario.email || usuario.rol}</div>
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                        <button onClick={() => setEditUser({ id: usuario.id, nombre: usuario.nombre, password: '' })}
+                          style={{ fontSize: '11px', color: '#0D6CB0', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>editar</button>
+                        <button onClick={() => toggleActivo(usuario)}
+                          style={{ fontSize: '11px', color: usuario.activo ? '#dc2626' : '#1a7a4a', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                          {usuario.activo ? 'desactivar' : 'reactivar'}</button>
+                      </div>
                     </td>
                     {UNIDADES.map(unidad => {
                       const rolActual = permisos[usuario.id]?.[unidad.id]
@@ -390,6 +421,26 @@ export default function Admin() {
           </div>
         </div>
       </div>
+
+      {editUser && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(2,40,71,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50 }}
+             onClick={() => setEditUser(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', width: '100%', maxWidth: '420px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#022847', margin: '0 0 1rem' }}>Editar usuario</h2>
+            <label style={labelSt}>Nombre</label>
+            <input style={{ ...estiloInput, width: '100%', boxSizing: 'border-box', marginBottom: '12px' }}
+              value={editUser.nombre} onChange={e => setEditUser(p => ({ ...p, nombre: e.target.value }))} />
+            <label style={labelSt}>Nueva contraseña (dejar en blanco para no cambiarla)</label>
+            <input style={{ ...estiloInput, width: '100%', boxSizing: 'border-box', marginBottom: '16px' }}
+              type="text" value={editUser.password} placeholder="mínimo 6 caracteres"
+              onChange={e => setEditUser(p => ({ ...p, password: e.target.value }))} />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setEditUser(null)} style={{ padding: '9px 16px', background: 'white', color: '#022847', border: '0.5px solid #d4e0eb', borderRadius: '7px', fontSize: '13px', cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={guardarEdicion} style={{ padding: '9px 16px', background: '#022847', color: 'white', border: 'none', borderRadius: '7px', fontSize: '13px', cursor: 'pointer' }}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
