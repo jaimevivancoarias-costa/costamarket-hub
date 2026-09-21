@@ -72,16 +72,39 @@ export default function Admin() {
     setPermisos(mapa)
     setLoading(false)
 
-    // Fincas de producción para el selector (vía la función segura).
+    // Fincas de producción para el selector.
+    // 1) Intento directo (funciona si el super admin también es de producción).
+    let cargadas = false
     try {
-      const { data: fr, error: fe } = await supabase.functions.invoke('admin-usuarios', { body: { action: 'fincas' } })
-      if (fe) setFincasMsg('No se pudieron cargar las fincas: ' + fe.message + ' (¿la función admin-usuarios está desplegada?)')
-      else if (fr?.error) setFincasMsg('No se pudieron cargar las fincas: ' + fr.error)
-      else if (fr?.fincas?.length) { setFincas(fr.fincas); setFincasMsg('') }
-      else setFincasMsg('No llegaron fincas. Revisa que la función admin-usuarios esté desplegada y actualizada.')
-    } catch (e) {
-      setFincasMsg('No se pudieron cargar las fincas: ' + e.message)
+      const { data: fdir } = await supabase.schema('produccion').from('finca')
+        .select('id, nombre, codigo, activa').eq('activa', true).order('nombre')
+      if (fdir?.length) { setFincas(fdir); setFincasMsg(''); cargadas = true }
+    } catch { /* si no tiene acceso directo, se usa la función abajo */ }
+
+    // 2) Si no, vía la función segura (y muestro el error real si falla).
+    if (!cargadas) {
+      try {
+        const { data: fr, error: fe } = await invocar({ action: 'fincas' })
+        if (fr?.fincas?.length) { setFincas(fr.fincas); setFincasMsg('') }
+        else {
+          let detalle = fr?.error || fe?.message || 'no llegaron fincas'
+          try { if (fe?.context?.text) { const t = await fe.context.text(); if (t) detalle = t } } catch { /* noop */ }
+          setFincasMsg('No se pudieron cargar las fincas: ' + detalle)
+        }
+      } catch (e) {
+        setFincasMsg('No se pudieron cargar las fincas: ' + e.message)
+      }
     }
+  }
+
+  // Llama a la función admin-usuarios enviando SIEMPRE el token del usuario
+  // (si no, algunas versiones mandan solo la anon key y la función responde 401).
+  async function invocar(body) {
+    const { data: { session } } = await supabase.auth.getSession()
+    return supabase.functions.invoke('admin-usuarios', {
+      body,
+      headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+    })
   }
 
  async function togglePermiso(usuarioId, unidadId, rolActual) {
@@ -112,9 +135,7 @@ export default function Admin() {
 
   async function guardarEdicion() {
     if (!editUser) return
-    const { data, error } = await supabase.functions.invoke('admin-usuarios', {
-      body: { action: 'editar', id: editUser.id, nombre: editUser.nombre, password: editUser.password || null },
-    })
+    const { data, error } = await invocar({ action: 'editar', id: editUser.id, nombre: editUser.nombre, password: editUser.password || null })
     if (error || data?.error) { setMensajePermiso('Error: ' + (data?.error || error.message)) }
     else { setMensajePermiso('Usuario actualizado'); setEditUser(null); cargarDatos() }
     setTimeout(() => setMensajePermiso(''), 3000)
@@ -123,9 +144,7 @@ export default function Admin() {
   async function toggleActivo(u) {
     const activar = !u.activo
     if (!activar && !window.confirm(`¿Desactivar a ${u.nombre}? No podrá entrar a ningún módulo. Se puede reactivar después.`)) return
-    const { data, error } = await supabase.functions.invoke('admin-usuarios', {
-      body: { action: 'desactivar', id: u.id, activar },
-    })
+    const { data, error } = await invocar({ action: 'desactivar', id: u.id, activar })
     if (error || data?.error) { setMensajePermiso('Error: ' + (data?.error || error.message)) }
     else { setMensajePermiso(activar ? 'Usuario reactivado' : 'Usuario desactivado'); cargarDatos() }
     setTimeout(() => setMensajePermiso(''), 3000)
@@ -155,8 +174,7 @@ export default function Admin() {
       const perfilRol = nuevoUsuario.modulos.costadron || 'materiales'
       const perfilZona = nuevoUsuario.modulos.costadron ? dronZona : null
 
-      const { data, error } = await supabase.functions.invoke('admin-usuarios', {
-        body: {
+      const { data, error } = await invocar({
           action: 'crear',
           nombre: nuevoUsuario.nombre,
           email: nuevoUsuario.email,
@@ -165,7 +183,6 @@ export default function Admin() {
           perfilZona,
           unidades,
           fincas: nuevoUsuario.fincas,
-        },
       })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
